@@ -11,20 +11,20 @@ def extract_packet_data(packets):
 
     for pkt in packets:
         if IP in pkt:  # só processa pacotes com camada IP
-            timestamps.append(pkt.time)
-            packet_sizes.append(len(pkt))
-            src_ips.append(pkt[IP].src)
-            dst_ips.append(pkt[IP].dst)
+            timestamps.append(pkt.time)  # adiciona o tempo em que o pacote foi capturado
+            packet_sizes.append(len(pkt))  # adiciona o tamanho do pacote
+            src_ips.append(pkt[IP].src)  # adiciona o IP de origem
+            dst_ips.append(pkt[IP].dst)  # adiciona o IP de destino
 
     return timestamps, packet_sizes, src_ips, dst_ips
 
 # Função que calcula métricas úteis para análise de tráfego
 def calculate_metrics(timestamps, packet_sizes):
-    total_packets = len(packet_sizes)
-    total_bytes = sum(packet_sizes)
+    total_packets = len(packet_sizes) # total de pacotes capturados
+    total_bytes = sum(packet_sizes)  # total de bytes capturados
 
     duration = timestamps[-1] - timestamps[0]  # tempo total da captura
-    avg_throughput = total_bytes / duration if duration > 0 else 0
+    avg_throughput = total_bytes / duration if duration > 0 else 0 # throughput médio em bytes/s
 
     # cálculo dos tempos entre pacotes consecutivos
     inter_arrival_times = []
@@ -34,6 +34,32 @@ def calculate_metrics(timestamps, packet_sizes):
     avg_interval = sum(inter_arrival_times) / len(inter_arrival_times)
 
     return total_packets, avg_throughput, avg_interval, inter_arrival_times
+
+# Função para calcular throughput por segundo (bytes/s)
+def calculate_throughput_per_second(timestamps, packet_sizes):
+    from collections import defaultdict
+    import math
+    throughput_dict = defaultdict(int)
+    for i in range(len(timestamps)):
+        t = timestamps[i]
+        size = packet_sizes[i]
+        t_seg = math.floor(t - timestamps[0])  # agrupar por segundo
+        throughput_dict[t_seg] += size
+    sorted_times = sorted(throughput_dict.keys())
+    throughput_values = [throughput_dict[t] for t in sorted_times]
+    return sorted_times, throughput_values
+
+# Função para plotar o gráfico de throughput por segundo
+def plot_throughput_per_second(file_path, base_name, sorted_times, throughput_values):
+    plt.figure(figsize=(10, 6))
+    plt.plot(sorted_times, throughput_values, marker='o', linestyle='-', color='red')
+    plt.title(f"Throughput (por segundo) - {base_name}")
+    plt.xlabel("Tempo (s)")
+    plt.ylabel("Throughput (bytes/s)")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(f"{file_path}_throughput.png")
+    plt.close()
 
 # Função para imprimir as métricas de forma organizada
 def print_metrics(file_path, total_packets, src_ips, dst_ips, avg_throughput, avg_interval):
@@ -71,6 +97,10 @@ def plot_graphs(file_path, timestamps, packet_sizes, inter_arrival_times):
     plt.tight_layout()
     plt.savefig(f"{file_path}_inter_arrival.png")
     plt.close()
+
+    # Gráfico de throughput por segundo (bytes/s)
+    sorted_times, throughput_values = calculate_throughput_per_second(timestamps, packet_sizes)
+    plot_throughput_per_second(file_path, base_name, sorted_times, throughput_values)
 
     # Histograma dos tamanhos dos pacotes
     plt.figure(figsize=(10, 6))
