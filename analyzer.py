@@ -1,6 +1,8 @@
 from scapy.all import rdpcap, IP
 import matplotlib.pyplot as plt
 import os
+from collections import defaultdict
+import math
 
 # Função para extrair dados úteis dos pacotes (timestamp, tamanho, IPs)
 def extract_packet_data(packets):
@@ -37,8 +39,6 @@ def calculate_metrics(timestamps, packet_sizes):
 
 # Função para calcular throughput por segundo (bytes/s)
 def calculate_throughput_per_second(timestamps, packet_sizes):
-    from collections import defaultdict
-    import math
     throughput_dict = defaultdict(int)
     for i in range(len(timestamps)):
         t = timestamps[i]
